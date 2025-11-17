@@ -210,16 +210,18 @@ double computerMoveParallelV1(Board *board, char currentMarker, int isMaximizing
 
     #pragma omp parallel for num_threads(numberOfThreads) default(none) shared(board, isMaximizingPlayer, maxDepth, possibleMoves, scores, totalPossibleMoves) firstprivate(currentMarker) schedule(dynamic)
     for (int k = 0; k < totalPossibleMoves; k++) {
-        int i = possibleMoves[k].r;
-        int j = possibleMoves[k].c;
+        #pragma omp task
+        {
+            int i = possibleMoves[k].r;
+            int j = possibleMoves[k].c;
 
-        Board localBoard = copyBoard(board);
+            Board localBoard = copyBoard(board);
+            localBoard.cells[i][j] = currentMarker;
+            int score = minimax(&localBoard, 0, !isMaximizingPlayer, INT_MIN, INT_MAX, maxDepth);
+            freeBoard(&localBoard);
 
-        localBoard.cells[i][j] = currentMarker;
-
-        scores[k] = minimax(&localBoard, 0, !isMaximizingPlayer, INT_MIN, INT_MAX, maxDepth);
-
-        freeBoard(&localBoard);
+            scores[k] = score;
+        }
     }
 
     int bestScore = isMaximizingPlayer ? INT_MIN : INT_MAX;
@@ -269,16 +271,19 @@ double computerMoveParallelV2(Board *board, char currentMarker, int isMaximizing
     #pragma omp parallel num_threads(numberOfThreads) default(none) shared(board, isMaximizingPlayer, maxDepth, possibleMoves, scores, totalPossibleMoves) firstprivate(currentMarker)
     #pragma omp single
     for (int k = 0; k < totalPossibleMoves; k++) {
-        int i = possibleMoves[k].r;
-        int j = possibleMoves[k].c;
+        #pragma omp task
+        {
+            int i = possibleMoves[k].r;
+            int j = possibleMoves[k].c;
 
-        Board localBoard = copyBoard(board);
+            Board localBoard = copyBoard(board);
 
-        localBoard.cells[i][j] = currentMarker;
+            localBoard.cells[i][j] = currentMarker;
 
-        scores[k] = minimax(&localBoard, 0, !isMaximizingPlayer, INT_MIN, INT_MAX, maxDepth);
+            scores[k] = minimax(&localBoard, 0, !isMaximizingPlayer, INT_MIN, INT_MAX, maxDepth);
 
-        freeBoard(&localBoard);
+            freeBoard(&localBoard);
+        }
     }
 
     int bestScore = isMaximizingPlayer ? INT_MIN : INT_MAX;
