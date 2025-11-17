@@ -42,7 +42,16 @@ def create_plots():
 
         plt.figure(figsize=(10, 6))
 
+        serial_data = df[(df['N'] == n) & (df['Depth'] == depth) & (df['Algorithm'] == 'Serial')]
+        if not serial_data.empty:
+            serial_time = serial_data['AvgMoveTime'].values[0]
+            plt.axhline(y=serial_time, color='black', linestyle=':', linewidth=2, label='Serial')
+            all_times_max = max(group['AvgMoveTime'].max(), serial_time)
+            plt.ylim(bottom=0, top=all_times_max * 1.2)
+
+
         for algo_num, algo_name in ALGORITHM_MAP.items():
+            if algo_name == 'Serial': continue
             algo_data = group[group['Algorithm'] == algo_name]
             if not algo_data.empty:
                 plt.plot(algo_data['Threads'], algo_data['AvgMoveTime'],
