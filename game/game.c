@@ -210,18 +210,15 @@ double computerMoveParallelV1(Board *board, char currentMarker, int isMaximizing
 
     #pragma omp parallel for num_threads(numberOfThreads) default(none) shared(board, isMaximizingPlayer, maxDepth, possibleMoves, scores, totalPossibleMoves) firstprivate(currentMarker) schedule(dynamic)
     for (int k = 0; k < totalPossibleMoves; k++) {
-        #pragma omp task
-        {
-            int i = possibleMoves[k].r;
-            int j = possibleMoves[k].c;
+        int i = possibleMoves[k].r;
+        int j = possibleMoves[k].c;
 
-            Board localBoard = copyBoard(board);
-            localBoard.cells[i][j] = currentMarker;
-            int score = minimax(&localBoard, 0, !isMaximizingPlayer, INT_MIN, INT_MAX, maxDepth);
-            freeBoard(&localBoard);
+        Board localBoard = copyBoard(board);
+        localBoard.cells[i][j] = currentMarker;
+        int score = minimax(&localBoard, 0, !isMaximizingPlayer, INT_MIN, INT_MAX, maxDepth);
+        freeBoard(&localBoard);
 
-            scores[k] = score;
-        }
+        scores[k] = score;
     }
 
     int bestScore = isMaximizingPlayer ? INT_MIN : INT_MAX;
@@ -271,7 +268,7 @@ double computerMoveParallelV2(Board *board, char currentMarker, int isMaximizing
     #pragma omp parallel num_threads(numberOfThreads) default(none) shared(board, isMaximizingPlayer, maxDepth, possibleMoves, scores, totalPossibleMoves) firstprivate(currentMarker)
     #pragma omp single
     for (int k = 0; k < totalPossibleMoves; k++) {
-        #pragma omp task
+        #pragma omp task default(none) shared(possibleMoves, scores, board, isMaximizingPlayer, currentMarker, maxDepth, k)
         {
             int i = possibleMoves[k].r;
             int j = possibleMoves[k].c;
